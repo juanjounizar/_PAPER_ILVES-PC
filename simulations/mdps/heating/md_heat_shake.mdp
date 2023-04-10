@@ -1,0 +1,62 @@
+;
+;	juanjo (2016)
+;
+define              = -DPOSRES -DPOSRES_WATER
+
+integrator          = md
+dt                  = 0.001	; ps !
+nsteps              = 50000	; total 50 ps.
+nstcomm             = 1
+nstxtcout           = 10000
+xtc-precision       = 10000
+nstxout             = 0
+nstvout             = 0
+nstfout             = 0
+nstlog              = 10000
+nstenergy           = 10000
+
+; Non-bonded Interactions
+nstlist             = 10
+ns_type             = grid
+cutoff-scheme       = Verlet
+rlist               = 1.2
+coulombtype         = PME
+rcoulomb            = 1.2
+vdwtype             = cutoff
+rvdw                = 1.2
+vdw-modifier        = force-switch
+fourierspacing      = 0.12
+pme-order           = 4
+ewald-rtol          = 1e-5
+
+
+; Berendsen temperature coupling is on in two groups
+Tcoupl              =  berendsen
+tc-grps		    =  System
+tau_t               =  0.1
+ref_t               =  48
+
+; Energy monitoring
+energygrps          =  System
+DispCorr            =  no
+
+; Isotropic pressure coupling is now off
+Pcoupl              =  no
+Pcoupltype          =  isotropic
+tau_p               =  5.0
+compressibility     =  4.6e-5
+ref_p               =  1.0
+
+; Generate velocites is on at 48 K
+gen_vel             =  yes
+gen_temp            =  48
+gen_seed            =  -1 
+
+; Constraints
+constraint_algorithm = shake
+Shake-SOR            = no
+shake-tol            = 0.0001
+lincs-order          = 4
+lincs-iter           = 1
+constraints          = h-bonds
+

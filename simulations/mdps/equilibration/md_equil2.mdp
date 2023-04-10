@@ -1,0 +1,64 @@
+;
+;	juanjo (2016)
+;
+title               = md2
+cpp                 = /lib/cpp
+define              =  
+
+integrator          = md
+dt                  = 0.002	; ps !
+nsteps              = 50000	; total 100 ps
+nstcomm             = 1
+nstxtcout           = 10000
+xtc-precision       = 10000
+nstxout             = 0
+nstvout             = 0
+nstfout             = 0
+nstlog              = 1000
+nstenergy           = 1000
+
+; Non-bonded Interactions
+nstlist             = 10
+ns_type             = grid
+cutoff-scheme       = Verlet
+rlist               = 1.2
+coulombtype         = PME
+rcoulomb            = 1.2
+vdwtype             = cutoff
+rvdw                = 1.2
+vdw-modifier        = force-switch
+fourierspacing      = 0.12
+pme-order           = 4
+ewald-rtol          = 1e-5
+
+; Berendsen temperature coupling is on in two groups
+Tcoupl              =  v-rescale 
+tc-grps		    =  Protein non-Protein
+tau_t               =  0.1 0.1
+ref_t               =  x   x
+ld-seed             =  -1
+
+; Energy monitoring
+energygrps          =  Protein non-Protein
+DispCorr            =  no
+
+; Isotropic pressure coupling is now on
+Pcoupl              =  berendsen
+Pcoupltype          =  isotropic
+tau_p               =  2.0
+compressibility     =  4.5e-5
+ref_p               =  1.0
+
+; Generate velocites is off at x K.
+continuation        =  yes
+gen_vel             =  no
+gen_temp            =  x
+gen_seed            =  -1 
+
+; Constraints
+constraint_algorithm = shake
+Shake-SOR            = no
+shake-tol            = 0.0001
+lincs_order	     = 4
+constraints          = h-bonds
+
