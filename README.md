@@ -27,21 +27,19 @@ source /usr/local/gromacs/bin/GMXRC
 
 # Simulations
 
-We include the `.pdb` files of the molecules presented in the paper ([simulations/molecules](simulations/molecules) folder), along with the `.mdp` files used to generate the files for the production simulations ([simulations/mdps](simulations/mdps) folder). Additionally, we include the pre-generated files for the production simulations ([production](simulations/molecules/barnase/production) folder of each molecule).
+We include the '.pdb' files of the molecules presented in the paper ([simulations/molecules](simulations/molecules) folder), along with the configuration `.mdp' files used to generate the '.tpr files' for the production simulations ([simulations/mdps](simulations/mdps) folder). Additionally, we include the pre-generated files for the production simulations ([production](simulations/molecules/barnase/production) folder of each molecule).
 
 ## Generate Files for a Production Simulation
-
 If you want to use our already generated files (this is an example, you will need to modify the file names):
 ```
 # Generate .tpr
 gmx_d grompp -f md_prod_shake.mdp -c equil3.gro -r equil3.gro -t state.cpt -p topol.top -o tpr.tpr
 ```
 
-If you want to start from the pdb file (this is an example, you will need to modify the file names and you may want to change the seeds in the .mdp files):
+If you want to start from the pdb file (this is an example, you will need to modify the file names and you may want to change the seeds in the .mdp files; the EOF tag at the end of the commands allows to pass the selected option to the program in question):
 
 ```
-# Generating the topology and the structure files, and setting up the force-field, the water model and the histidine protonation state for the simulation.
-{ echo "9"; yes 1; } | \
+# Generating the topology and the structure files, and setting up the force-field, the water model and the histidine protonation state for the simulation (we used the Charmm 22 plus CMAP force field in our simulations and the histidines monoprotonated at nitrogen atom NE2).
 gmx_d pdb2gmx -f pdb -water tip3p -ignh -his
 
 # Preparing the system by generating a box 
@@ -55,7 +53,7 @@ gmx_d solvate -cp pbc.gro -cs spc216.gro -o pbc-water.gro -p topol.top
 # Create a new TPR file for the system solvated
 gmx_d grompp -v -f vac-minim.mdp -c pdb-water.gro -p topol.top -o solvated.tpr -maxwarn 10
 
-# Neutralization step. Ions are added to the system and water molecules are substituted by
+# Neutralization step. Ions are added to the system by substituting water molecules (the option 13). The ${RANDOM} variable is previously defined to assume the job id 
 gmx_d genion -s solvated.tpr -o neut.gro -p topol.top -pname SOD -nname CLA -neutral -seed ${RANDOM} <<EOF
 13
 EOF
@@ -63,7 +61,7 @@ EOF
 # Create a new TPR file with the ions
 gmx_d grompp -f vac-minim.mdp -c neut.gro -p topol.top -o neut.tpr -maxwarn 10
 
-# Convert the generated pdb
+# Convert to pdb the generated .gro
 gmx_d trjconv -f  neut.gro -s neut.tpr -o neut.pdb -pbc mol -ur compact -center <<EOF
 1
 0
@@ -89,8 +87,7 @@ EOF
 #
 # Heating step
 #
-
-# Loop for increasing the the system's T
+# Loop for increasing the the system's T up to 298 K
 gmx_d grompp -v -f md_heat_shake.mdp -po md_heat_out.mdp -c EM-neut.gro -r EM-neut.gro -p topol.top -o heating-0.tpr -maxwarn 10
 
 gmx_d mdrun -s heating-0.tpr -c heating.gro -e heating.edr -x heating.xtc -g heating.log -v -nice 19
@@ -101,9 +98,9 @@ do
 	NEW_EXT=$(( 50000 + $i * 50000 )) 
 
    	sed -i "s/^ref_t.*/ref_t               =  $NEW_T/" md_heat_shake.mdp
-    sed -i "s/^; Generate velocites is on at.*/; Generate velocites is on at $NEW_T K/" md_heat_shake.mdp
-    sed -i "s/^gen_temp.*/gen_temp            = $NEW_T/" md_heat_shake.mdp
-	sed -i "s/^nsteps.*/nsteps              = $NEW_EXT/" md_heat_shake.mdp
+    	sed -i "s/^; Generate velocites is on at.*/; Generate velocites is on at $NEW_T K/" md_heat_shake.mdp
+    	sed -i "s/^gen_temp.*/gen_temp         = $NEW_T/" md_heat_shake.mdp
+	sed -i "s/^nsteps.*/nsteps             = $NEW_EXT/" md_heat_shake.mdp
 
 	gmx_d grompp -v -f md_heat_shake.mdp -po md_heat-$i-out.mdp -c heating.gro -r heating.gro -p topol.top -o heating-$i.tpr -maxwarn 10
 
@@ -113,14 +110,13 @@ done
 #
 # Equilibration step
 #
-
 temp=298
 sed -i "s/^ref_t.*/ref_t               =  $temp/" md_equil1_shake.mdp
 sed -i "s/^ref_t.*/ref_t               =  $temp $temp/" md_equil2_shake.mdp
 sed -i "s/^ref_t.*/ref_t               =  $temp $temp/" md_equil3_shake.mdp
-sed -i "s/^gen_temp.*/gen_temp            =  $temp/" md_equil1_shake.mdp
-sed -i "s/^gen_temp.*/gen_temp            =  $temp/" md_equil2_shake.mdp
-sed -i "s/^gen_temp.*/gen_temp            =  $temp/" md_equil3_shake.mdp
+sed -i "s/^gen_temp.*/gen_temp         =  $temp/" md_equil1_shake.mdp
+sed -i "s/^gen_temp.*/gen_temp         =  $temp/" md_equil2_shake.mdp
+sed -i "s/^gen_temp.*/gen_temp         =  $temp/" md_equil3_shake.mdp
 
 # First equilibration step
 gmx_d grompp -v -f md_equil1_shake.mdp -po md_equil1_shake_out.mdp -c heating.gro -r heating.gro -t state.cpt -p topol.top -o equil1.tpr -maxwarn 10
@@ -141,25 +137,22 @@ gmx_d energy -f equil3.edr -o equil3_total-energy.xvg <<EOF
 14
 EOF
 
-#
-# Generate .tpr
-#
-gmx_d grompp -f md_prod_shake.mdp -c equil3.gro -r equil3.gro -t state.cpt -p topol.top -o tpr.tpr
 ```
 
 ## Execute a Production Simulation
 
-In order to use ILVES-PC instead of the default constraint solvers, you must set the `USE_ILVES_PC` environment variable to `1`. Also, to set the tolerance of the solver, change the `shake-tol` parameter of the `.mdp` used to generate the `.tpr` file.
+In order to use ILVES-PC instead of the default constraint solvers, you must set the 'USE_ILVES_PC' environment variable to '1'. Also, to set the tolerance of the solver, change the 'shake-tol' parameter of the '.mdp' used to generate the '.tpr' file. Below you will find just an example. The '.mdp' files in ([simulations/mdps/production](simulations/mdps/production) folder will settle or an NPT ('md_prod_shake_npt.mdp'), an NVT ('md_prod_shake_nvt.mdp') or an NVE ('md_prod_shake_nve.mdp') simulation.
 
-```
+# Generate .tpr
+gmx_d grompp -f md_prod.mdp -c equil3.gro -r equil3.gro -t state.cpt -p topol.top -o prod.tpr
+
 # Run using SHAKE or P-LINCS (depending on the value of the constraint_algorithm of the mdp file)
 export USE_ILVES_PC=0
-gmx_d mdrun -ntmpi 1 -s "tpr.tpr" -noconfout -nsteps 50000 -g gromacs.log
+gmx_d mdrun -s prod.tpr -x prod.xtc -c prod.gro -e prod.edr -g gromacs.log -nice 19 -v
 
 # Run using ILVES-PC
 export USE_ILVES_PC=1
-gmx_d mdrun -ntmpi 1 -s "tpr.tpr" -noconfout -nsteps 50000 -g gromacs.log
-```
+gmx_d mdrun -s prod.tpr -x prod.xtc -c prod.gro -e prod.edr -g gromacs.log -nice 19 -v
 
 # Cite Us
 
