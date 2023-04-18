@@ -33,9 +33,9 @@ ewald-rtol          = 1e-5
 
 ; Berendsen temperature coupling is on in two groups
 Tcoupl              =  v-rescale 
-tc-grps		    =  Protein non-Protein
+tc-grps		          =  Protein non-Protein
 tau_t               =  0.1 0.1
-ref_t               =  x   x
+ref_t               =  298 298
 ld-seed             =  -1
 
 ; Energy monitoring
@@ -49,16 +49,15 @@ tau_p               =  2.0
 compressibility     =  4.5e-5
 ref_p               =  1.0
 
-; Generate velocites is off at x K.
+; Generate velocites is off at 298 K.
 continuation        =  yes
 gen_vel             =  no
-gen_temp            =  x
+gen_temp            =  298
 gen_seed            =  -1 
 
 ; Constraints
 constraint_algorithm = shake
 Shake-SOR            = no
 shake-tol            = 0.0001
-lincs_order	     = 4
 constraints          = h-bonds
 
