@@ -48,7 +48,7 @@ tau_p               =  2.0
 compressibility     =  4.5e-5
 ref_p               =  1.0
 
-; Generate velocites is off at x K
+; Generate velocites is off at 298 K
 continuation        =  yes
 gen_vel             =  no
 gen_temp            =  298
@@ -56,11 +56,6 @@ gen_seed            =  -1
 
 ; Constraints
 constraint_algorithm = shake
+Shake-SOR            = no
 shake-tol            = 0.0001
-lincs_iter = 1000          ; maximum lincs-iters
-lincs_order	     = 4
-constraints          = all-bonds
-
-; Avoid randomness
-gen-seed                = 2022
-ld-seed                 = 2022
+constraints          = h-bonds
